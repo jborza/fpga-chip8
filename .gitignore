@@ -1,0 +1,9 @@
+db
+incremental_db
+output_files
+*.cmp
+*.txt
+*.bak
+work/
+simulation/
+*.rpt
