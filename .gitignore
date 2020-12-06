@@ -5,5 +5,13 @@ output_files
 *.txt
 *.bak
 work/
-simulation/
 *.rpt
+simulation/modelsim/rtl_work
+simulation/modelsim/*.sft
+simulation/modelsim/*.vo
+simulation/modelsim/*.wlf
+simulation/modelsim/msim_transcript
+simulation/modelsim/*.mif
+modelsim.ini
+simulation/modelsim/*.xrf
+simulation/modelsim/*.do.bak*

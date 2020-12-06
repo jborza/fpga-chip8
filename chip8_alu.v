@@ -24,13 +24,25 @@ wire [8:0] add_temp;
 always @* begin
 	case (operation)
 		3'h0:
+			begin
 			out = Y;
+			carry_out = 1'b0;
+			end
 		3'h1:
+			begin
 			out = X | Y;
+			carry_out = 1'b0;
+			end
 		3'h2:
+			begin
 			out = X & Y;
+			carry_out = 1'b0;
+			end
 		3'h3: 
+			begin
 			out = X ^ Y;
+			carry_out = 1'b0;
+			end
 		3'h4: begin
 			{ carry_out, out} = X + Y;
 			end
@@ -47,32 +59,6 @@ always @* begin
 			carry_out = X[7];
 			out = X << 1;
 			end
-//		3'h0:
-//			out <= Y;
-//		3'h1:
-//			out <= X | Y;
-//		3'h2:
-//			out <= X & Y;
-//		3'h3: 
-//			out <= X ^ Y;
-//		3'h4: begin
-//				add_temp = X + Y;
-//				carry_out <= add_temp[8];
-//				out = add_temp[7:0];
-//			end
-//		3'h5: //x-y
-//			begin
-//			carry_out <= X > Y ? 1'b1: 1'b0;
-//			out <= X - Y;
-//			end
-//		3'h6: begin //store the LSB in carry
-//			carry_out <= X[0];
-//			out <= X >> 1;
-//			end
-//		3'h7: begin //store MSB in carry
-//			carry_out <= X[7];
-//			out <= X << 1;
-//			end
 	endcase
 end
 
