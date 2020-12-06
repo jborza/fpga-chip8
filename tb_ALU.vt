@@ -1,0 +1,34 @@
+`timescale 1ns/10ps //Adjust to suit
+
+module tb_ALU;
+
+reg     [7:0]    X            ;
+reg     [7:0]    Y            ;
+reg     [2:0]    operation    ;
+wire    [7:0]    out          ;
+
+ALU uut (
+    .X            (    X            ),
+    .Y            (    Y            ),
+    .operation    (    operation    ),
+    .out          (    out          )
+);
+
+parameter PERIOD = 10; //adjust for your timescale
+
+initial begin
+    $dumpfile("tb_output.vcd");
+    $dumpvars(2, tb_ALU);
+    clk = 1'b0;
+    #(PERIOD/2);
+    forever
+        #(PERIOD/2) clk = ~clk;
+end
+
+initial begin
+        rst=1'b0;
+         #(PERIOD*2) rst=~rst;
+         #PERIOD rst=~rst;
+         end
+`include "user.tb_ALU.v"
+endmodule
