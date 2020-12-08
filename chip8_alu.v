@@ -22,8 +22,6 @@ module ALU(
 
 `include "alu_params.vh"
 
-wire [8:0] add_temp;
-
 //calculate the logic operations
 always @* begin
 	case (operation)
