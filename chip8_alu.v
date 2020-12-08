@@ -10,6 +10,8 @@ operation encoding:
 6: x>>1
 7: x<<1
 */
+
+
 module ALU(
 	input [7:0] X,
 	input [7:0] Y,
@@ -18,44 +20,46 @@ module ALU(
 	output reg carry_out
 );
 
+`include "alu_params.vh"
+
 wire [8:0] add_temp;
 
 //calculate the logic operations
 always @* begin
 	case (operation)
-		3'h0:
+		ALU_Y:
 			begin
 			out = Y;
 			carry_out = 1'b0;
 			end
-		3'h1:
+		ALU_OR:
 			begin
 			out = X | Y;
 			carry_out = 1'b0;
 			end
-		3'h2:
+		ALU_AND:
 			begin
 			out = X & Y;
 			carry_out = 1'b0;
 			end
-		3'h3: 
+		ALU_XOR: 
 			begin
 			out = X ^ Y;
 			carry_out = 1'b0;
 			end
-		3'h4: begin
+		ALU_PLUS: begin
 			{ carry_out, out} = X + Y;
 			end
-		3'h5: //x-y
+		ALU_MINUS: //x-y
 			begin
 			carry_out = X > Y ? 1'b1: 1'b0;
 			out = X - Y;
 			end
-		3'h6: begin //store the LSB in carry
+		ALU_SHIFT_RIGHT: begin //store the LSB in carry, shift right
 			carry_out = X[0];
 			out = X >> 1;
 			end
-		3'h7: begin //store MSB in carry
+		ALU_SHIFT_RIGHT_LEFT: begin //store MSB in carry, shift right
 			carry_out = X[7];
 			out = X << 1;
 			end
