@@ -59,7 +59,7 @@ always @* begin
 			carry_out = X[0];
 			out = X >> 1;
 			end
-		ALU_SHIFT_RIGHT_LEFT: begin //store MSB in carry, shift right
+		ALU_SHIFT_LEFT: begin //store MSB in carry, shift right
 			carry_out = X[7];
 			out = X << 1;
 			end
