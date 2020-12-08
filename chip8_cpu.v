@@ -1,9 +1,8 @@
 module chip8_cpu(
 	input wire clk,
 	input wire reset,
-	output reg[15:0] out_address,
-	input wire [7:0] data_in
-
+	output reg[11:0] out_address,
+	input wire [7:0] in_data
 );
 
 //display RAM (
@@ -15,8 +14,11 @@ module chip8_cpu(
 //sound timer
 //keypad states
 
+//////////////////
+// CPU register file
+
 reg [15:0] reg_I;
-reg [15:0] PC;
+reg [11:0] PC; //should be 12-bit only
 reg [7:0] reg_V[3:0]; //V0..VF
 reg [15:0] stack[3:0]; //16-word stack
 reg [7:0] delay_timer;
@@ -31,19 +33,46 @@ localparam CPU_TICKS_PER_TIMER_TICK = 9; //540/60
 
 reg[31:0] tick_counter;
 
-//instruction decode
+reg [7:0] vx;
+reg [7:0] vy;
+
+//instruction decode results
 reg [15:0] opcode;
-wire [7:0] vx;
-wire [7:0] vy;
+
+wire [3:0] x;
+wire [3:0] y;
+wire [11:0] nnn; 
+wire [7:0] nn; 
+wire [3:0] n; 
+wire alu_switchxy;
+wire jump;
+wire [2:0] alu_op;
 reg cpu_tick;
+wire [3:0] op_main;
+wire [3:0] op_sub;
 
 //CPU states
 localparam [7:0] 
 	state_fetch_1 = 7'h0,
 	state_fetch_2 = 7'h1,
-	state_decode = 7'h2;
+	state_fetch_end = 7'h2,
+	state_decode = 7'h3;
 	
 reg [7:0] state;
+
+decoder decoder(
+	.opcode(opcode),
+	.PC(PC),
+	.op_main(op_main), //TODO
+	.op_sub(op_sub), //TODO
+	.x(x),
+	.y(y),
+	.nnn(nnn),
+	.nn(nn),
+	.n(n),
+	.alu_switchxy(alu_switchxy),
+	.alu_op(alu_op)
+);
 
 ALU alu(
 	.X(alu_x),
@@ -66,6 +95,7 @@ ALU alu(
 //always @* begin
 //	vx = opcode[11:8];
 //	vy = opcode[7:4];
+//	nnn = opcode[11:0];
 //end
 
 //cpu tick enabler
@@ -90,15 +120,42 @@ always @(posedge clk) begin
 	end
 end
 
+//TODO see https://github.com/asinghani/pifive-cpu/blob/main/cpu/rtl/decode/decode.sv
 always @(posedge clk) begin 
 	if(cpu_tick) begin
+	
 		//fetch, decode, execute
 		//fetch byte 1
-//		case(state)
-//				state_fetch_1:
+		case(state)
+				state_fetch_1:
+				begin
+					//MAR = PC
+					out_address <= PC;
+					state <= state_fetch_2;
+					PC <= PC + 1;
+				end
+				state_fetch_2: 
+				begin
+					out_address <= PC;
+					PC <= PC + 1;
+					//store first half of opcode 
+					opcode[15:8] <= in_data;
+				end
+				state_fetch_end: 
+				begin
+					//store second half of opcode
+					opcode [7:0] = in_data;										
+				end
+				state_decode:
+				begin
+					//retrieve vx, vy
+					vx <= reg_V[x];
+					vy <= reg_V[y];
+				end
+					//determine next state based on the opcode
 //				default:
 //				
-//		endcase
+		endcase
 		
 	end
 end
