@@ -25,7 +25,7 @@ always @* begin
 	nnn = opcode[11:0];
 	nn = opcode [7:0];
 	n = opcode[3:0];
-	op_main = opcode[15:12];
+	//op_main = opcode[15:12];
 end
 
 //generate sub-command
