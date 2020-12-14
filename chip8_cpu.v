@@ -62,9 +62,8 @@ reg [7:0] state;
 
 decoder decoder(
 	.opcode(opcode),
-	.PC(PC),
-	.op_main(op_main), //TODO
-	.op_sub(op_sub), //TODO
+	.op_main(op_main), 
+	.op_sub(op_sub), 
 	.x(x),
 	.y(y),
 	.nnn(nnn),

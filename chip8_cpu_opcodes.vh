@@ -18,6 +18,7 @@ FXXX
 8: 1E
 9: 29
 A: 33
+B: 55
 B: 65
 */
 
@@ -28,3 +29,9 @@ localparam O_E_KEY_NOT = 4'h3;
 localparam O_FX07 = 4'h4;
 localparam O_FX0A = 4'h5;
 localparam O_FX15 = 4'h6;
+localparam O_FX18 = 4'h7;
+localparam O_FX1E = 4'h8;
+localparam O_FX29 = 4'h9;
+localparam O_FX33 = 4'hA;
+localparam O_FX55 = 4'hB;
+localparam O_FX65 = 4'hC;

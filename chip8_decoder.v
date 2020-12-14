@@ -1,6 +1,5 @@
 module decoder(
 	input wire [15:0] opcode,
-	input wire [11:0] PC,
 	output wire [3:0] op_main,
 	output reg [3:0] op_sub,
 	output reg [3:0] x,
@@ -11,7 +10,6 @@ module decoder(
 	output reg [2:0] alu_op,
 	output wire alu_switchxy, //swap x and y if asserted
 	output reg jump
-//	output reg loadstore;
 );
 
 `include "alu_params.vh"
@@ -47,6 +45,29 @@ always @* begin
 					op_sub = O_E_KEY;
 				8'hA1:
 					op_sub = O_E_KEY_NOT;
+				default:
+					op_sub = 3'hx;
+			endcase
+		4'hF:
+			case(opcode[7:0])
+				8'h07:
+					op_sub = O_FX07;
+				8'h0A:
+					op_sub = O_FX0A;
+				8'h15:
+					op_sub = O_FX15;
+				8'h18:
+					op_sub = O_FX18;
+				8'h1E:
+					op_sub = O_FX1E;
+				8'h29:
+					op_sub = O_FX29;
+				8'h33:
+					op_sub = O_FX33;
+				8'h55:
+					op_sub = O_FX55;
+				8'h65:
+					op_sub = O_FX65;
 				default:
 					op_sub = 3'hx;
 			endcase
@@ -86,7 +107,7 @@ always @* begin
 	end
 end
 
-assign alu_switchxy = opcode[15:12] == 4'h8 && opcode[3:0] == 4'h7 ? 1'b1 : 1'b0;
+assign alu_switchxy = ((opcode[15:12] == 4'h8) && (opcode[3:0] == 4'h7)) ? 1'b1 : 1'b0;
 assign op_main = opcode[15:12];
 
 endmodule
