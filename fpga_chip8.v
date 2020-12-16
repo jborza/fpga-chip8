@@ -7,15 +7,9 @@ module fpga_chip8(
 );
 
 reg [31:0] timer;                  
-localparam  TIMER_LIMIT = 5_000_000;
+localparam  TIMER_LIMIT = 25_000_000;
 
-always@(posedge clk) begin
-	if (timer == TIMER_LIMIT) begin    
-		timer <= 0;                       
-		led <= ~led;	
-   end else
-	   timer <= timer + 1'b1;
-end
+
 
 // memory wires
 // framebuffer
@@ -26,8 +20,8 @@ wire [7:0] fb_ram_in;
 wire [7:0] fb_ram_out;
 // ram
 wire we; //ram write enable
-wire [9:0] write_address;
-wire [9:0] read_address;
+wire [11:0] write_address;
+wire [11:0] read_address;
 wire [7:0] ram_in;
 wire [7:0] ram_out;
 
@@ -76,5 +70,31 @@ chip8_cpu cpu(
 	.data_out(ram_in),
 	.keys(keys)
 );
+
+reg renderer_start;
+
+renderer renderer_inst
+(
+	.clk(clk) ,	// input  clk_sig
+	.fb_write_address(fb_write_address) ,	// output [9:0] fb_write_address_sig
+	.fb_write_enable(fb_we) ,	// output  fb_write_enable_sig
+	.fb_ram_in(fb_ram_in_sig) ,	// output [7:0] fb_ram_in_sig
+	.cpu_ram_read_address(read_address) ,	// output [11:0] cpu_ram_read_address_sig
+	.cpu_ram_out(ram_out) ,	// input [7:0] cpu_ram_out_sig
+	.start_signal(renderer_start) ,	// input  start_signal_sig
+	.finished_signal(finished_signal_sig) 	// output  finished_signal_sig
+);
+
+
+always@(posedge clk) begin
+	if (timer == TIMER_LIMIT) begin    
+		timer <= 0;                       
+		led <= ~led;	
+		renderer_start <= 1'b1;
+   end else begin
+	   timer <= timer + 1'b1;
+		renderer_start <= 1'b0;
+	end
+end
 
 endmodule
