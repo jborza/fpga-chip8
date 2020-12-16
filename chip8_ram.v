@@ -1,16 +1,17 @@
-module ram(
+//12-bit 4096 cells of 8-bit values
+module chip8_ram(
 	input wire clk, 
-	input wire [9:0] read_address,
+	input wire [11:0] read_address,
 	input wire [7:0] d, //input data
-	input wire [9:0] write_address,
+	input wire [11:0] write_address,
 	output reg [7:0] q, //output data
 	input wire  we
 );
 
-	reg [7:0] mem [1023:0]; //128*64 bits = 8192 bits = 1024 bytes
+	reg [7:0] mem [4095:0]; 
 	
 	initial begin
-		$readmemb("ram-fb.txt", mem);
+		$readmemb("ram-chip8.txt", mem);
 	end
 	
 	always @(posedge clk) begin
