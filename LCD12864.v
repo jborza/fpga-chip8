@@ -90,7 +90,7 @@ begin
 		//first 8 pixels
 		rs <= 1;
 		dat <= data_in;
-		address_out <= address_out + 1;
+		address_out <= address_out + 1'b1;
 		//don't increment x as one coordinate refers to 16 bits / pixels
 		next <= data3;
 	 end
@@ -98,10 +98,10 @@ begin
 		//next 8 pixels
 		rs <= 1;
 		dat <= data_in;
-		address_out <= address_out + 1;
-		x <= x + 1;
+		address_out <= address_out + 1'b1;
+		x <= x + 1'b1;
 		if (x == 15) begin
-			y <= y + 1; 
+			y <= y + 1'b1; 
 			x <= 0; //x wraps around, we shouldn't need this
 			next <= data_address_vertical;
 		end else begin
