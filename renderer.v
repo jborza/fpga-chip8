@@ -5,8 +5,8 @@ module renderer(
 	output reg[9:0] fb_write_address,
 	output reg fb_write_enable,
 	output reg[7:0] fb_ram_in,
-	output reg[11:0] cpu_ram_read_address,
-	input wire[7:0] cpu_ram_out,
+	output reg[11:0] main_ram_read_address,
+	input wire[7:0] main_ram_out,
 	input wire start_signal,
 	output reg finished_signal
 );
@@ -30,9 +30,10 @@ begin
 		read_address <= read_address + 'b1;
 		write_address <= write_address + 'b1;
 		
-		fb_ram_in <= cpu_ram_out;
+		fb_ram_in <= main_ram_out;
 		fb_write_enable <= 'b1;
-		cpu_ram_read_address <= read_address;
+		main_ram_read_address <= read_address;
+		//((write_address / 8) * 32 )  + (write_address % 8)
 		fb_write_address <= {write_address[7:3], 2'b00 ,  write_address[2:0]};		
 		if(read_address == 'h1ff) //'h1ff)
 		begin

@@ -64,10 +64,10 @@ chip8_cpu cpu(
 	.clk(clk),
 	.reset(~reset),
 	//.address_out(write_address),
-	.address_out(read_address),
-	.data_in(ram_out),
+	.address_out(read_address_tmp),
+	.data_in(ram_out_tmp),
 	.write_enable(we),
-	.data_out(ram_in),
+	.data_out(ram_in_tmp),
 	.keys(keys)
 );
 
@@ -78,9 +78,9 @@ renderer renderer_inst
 	.clk(clk) ,	// input  clk_sig
 	.fb_write_address(fb_write_address) ,	// output [9:0] fb_write_address_sig
 	.fb_write_enable(fb_we) ,	// output  fb_write_enable_sig
-	.fb_ram_in(fb_ram_in_sig) ,	// output [7:0] fb_ram_in_sig
-	.cpu_ram_read_address(read_address) ,	// output [11:0] cpu_ram_read_address_sig
-	.cpu_ram_out(ram_out) ,	// input [7:0] cpu_ram_out_sig
+	.fb_ram_in(fb_ram_in) ,	// output [7:0] fb_ram_in_sig
+	.main_ram_read_address(read_address) ,	// output [11:0] cpu_ram_read_address_sig
+	.main_ram_out(ram_out) ,	// input [7:0] cpu_ram_out_sig
 	.start_signal(renderer_start) ,	// input  start_signal_sig
 	.finished_signal(finished_signal_sig) 	// output  finished_signal_sig
 );
