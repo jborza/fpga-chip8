@@ -18,19 +18,38 @@ always@(posedge clk) begin
 end
 
 // memory wires
-reg we; //ram write enable
-reg [9:0] write_address;
+// framebuffer
+wire fb_we; //ram write enable
+wire [9:0] fb_write_address;
+wire [9:0] fb_read_address;
+wire [7:0] fb_ram_in;
+wire [7:0] fb_ram_out;
+// ram
+wire we; //ram write enable
+wire [9:0] write_address;
 wire [9:0] read_address;
-reg [7:0] ram_in;
+wire [7:0] ram_in;
 wire [7:0] ram_out;
+
 wire [7:0] ascii_scan_data;
-reg [9:0] current_address = 6'h0;
+
+wire [15:0] keys; //TODO wire to the debounced keypad
+//reg [9:0] current_address = 6'h0;
 
 // display pixel buffer
-ram ram(
+ram framebuffer(
    .clk(clk),
-	.q(ram_out), 
-	.d(ram_in), 
+	.q(fb_ram_out), 
+	.d(fb_ram_in), 
+	.write_address(fb_write_address), 
+	.read_address(fb_read_address), 
+	.we(fb_we)
+);
+
+chip8_ram ram(
+	.clk(clk),
+	.q(ram_out),
+	.d(ram_in),
 	.write_address(write_address), 
 	.read_address(read_address), 
 	.we(we)
@@ -43,13 +62,19 @@ LCD12864 lcd(
 		.rw(rw), 
 		.en(en), 
 		.dat(dat),
-		.address_out(read_address),
-		.data_in(ram_out)
+		.address_out(fb_read_address),
+		.data_in(fb_ram_out)
 );
 
 chip8_cpu cpu(
 	.clk(clk),
-	.reset(~reset)
+	.reset(~reset),
+	//.address_out(write_address),
+	.address_out(read_address),
+	.data_in(ram_out),
+	.write_enable(we),
+	.data_out(ram_in),
+	.keys(keys)
 );
 
 endmodule

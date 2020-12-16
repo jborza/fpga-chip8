@@ -97,13 +97,18 @@ set_global_assignment -name EDA_GENERATE_FUNCTIONAL_NETLIST OFF -section_id eda_
 set_global_assignment -name EDA_GENERATE_FUNCTIONAL_NETLIST OFF -section_id eda_board_design_signal_integrity
 set_global_assignment -name EDA_GENERATE_FUNCTIONAL_NETLIST OFF -section_id eda_board_design_boundary_scan
 set_global_assignment -name EDA_TEST_BENCH_ENABLE_STATUS TEST_BENCH_MODE -section_id eda_simulation
-set_global_assignment -name EDA_NATIVELINK_SIMULATION_TEST_BENCH tb -section_id eda_simulation
+set_global_assignment -name EDA_NATIVELINK_SIMULATION_TEST_BENCH tb_decoder -section_id eda_simulation
 set_global_assignment -name EDA_TEST_BENCH_NAME tb_alu -section_id eda_simulation
 set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id tb_alu
-set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME tb_alu -section_id tb_alu
-set_global_assignment -name EDA_TEST_BENCH_NAME tb -section_id eda_simulation
-set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id tb
-set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME alu_sim -section_id tb
-set_global_assignment -name EDA_TEST_BENCH_FILE tb_ALU.vt -section_id tb_alu
-set_global_assignment -name EDA_TEST_BENCH_FILE simulation/modelsim/alu_sim.v -section_id tb
+set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME alu_sim -section_id tb_alu
+set_global_assignment -name VERILOG_FILE chip8_decoder.v
+set_global_assignment -name VERILOG_INCLUDE_FILE alu_params.vh
+set_global_assignment -name VERILOG_INCLUDE_FILE chip8_cpu_opcodes.vh
+set_global_assignment -name EDA_TEST_BENCH_NAME tb_decoder -section_id eda_simulation
+set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id tb_decoder
+set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME decoder_sim -section_id tb_decoder
+set_global_assignment -name EDA_TEST_BENCH_FILE simulation/modelsim/alu_sim.v -section_id tb_alu
+set_global_assignment -name EDA_TEST_BENCH_FILE simulation/modelsim/decoder_sim.v -section_id tb_decoder
+set_global_assignment -name SDC_FILE fpga_chip8.sdc
+set_global_assignment -name VERILOG_FILE chip8_ram.v
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
