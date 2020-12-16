@@ -8,8 +8,7 @@ module decoder(
 	output reg [7:0] nn,
 	output reg [3:0] n,
 	output reg [2:0] alu_op,
-	output wire alu_switchxy, //swap x and y if asserted
-	output reg jump
+	output wire alu_switchxy //swap x and y if asserted
 );
 
 `include "alu_params.vh"

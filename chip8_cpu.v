@@ -21,10 +21,10 @@ module chip8_cpu(
 
 //////////////////
 // CPU register file
+reg [7:0] reg_V[15:0]; //V0..VF
 
 reg [15:0] I;
 reg [15:0] PC = 12'h200; //could be 12-bit only
-reg [7:0] reg_V[15:0]; //V0..VF
 reg [15:0] stack[15:0]; //16-word stack
 reg [3:0] SP; //stack pointer
 reg [7:0] delay_timer;
@@ -51,7 +51,6 @@ wire [11:0] nnn;
 wire [7:0] nn; 
 wire [3:0] n; 
 wire alu_switchxy;
-wire jump;
 wire [2:0] alu_op;
 reg cpu_tick;
 wire [3:0] op_main;
