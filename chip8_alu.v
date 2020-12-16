@@ -13,9 +13,9 @@ operation encoding:
 
 
 module ALU(
-	input [7:0] X,
-	input [7:0] Y,
-	input [2:0] operation,
+	input wire [7:0] X,
+	input wire [7:0] Y,
+	input wire [2:0] operation,
 	output reg [7:0] out,
 	output reg carry_out
 );
