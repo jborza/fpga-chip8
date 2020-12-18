@@ -13,7 +13,8 @@ module renderer(
 
 reg running;
 reg [9:0] write_address;
-reg [9:0] write_address_previous;
+reg [9:0] write_address_delay1;
+reg [9:0] write_address_delay2;
 reg [11:0] read_address;
 
 always @(posedge clk)
@@ -35,9 +36,11 @@ begin
 		fb_write_enable <= 'b1;
 		main_ram_read_address <= read_address;
 		//((write_address / 8) * 32 )  + (write_address % 8)
-		fb_write_address <= {write_address_previous[7:3], 2'b00 ,  write_address_previous[2:0]};	
-		write_address_previous <= write_address;
-		if(read_address == 'h1ff) //'h1ff)
+		fb_write_address <= {write_address_delay2[7:3], 2'b00 ,  write_address_delay2[2:0]};	
+		// two clock delay buffer as we have a delay on both input and output - why?
+		write_address_delay1 <= write_address;
+		write_address_delay2 <= write_address_delay1;
+		if(read_address == 'h1ff)
 		begin
 			running <= 'b0;
 			finished_signal <= 'b1; 
