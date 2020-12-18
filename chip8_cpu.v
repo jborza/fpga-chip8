@@ -1,9 +1,10 @@
 module chip8_cpu(
 	input wire clk,
 	input wire reset,
-	output reg[11:0] address_out,
+	output reg[11:0] address_in,
 	input wire [7:0] data_in,
 	output reg write_enable,
+	output reg[11:0] address_out,
 	output reg [7:0] data_out,
 	input wire [15:0] keys
 );
@@ -21,7 +22,7 @@ module chip8_cpu(
 
 //////////////////
 // CPU register file
-reg [7:0] reg_V[15:0]; //V0..VF
+//reg [7:0] reg_V[15:0]; //V0..VF
 
 reg [15:0] I;
 reg [15:0] PC = 12'h200; //could be 12-bit only
@@ -56,10 +57,13 @@ reg cpu_tick;
 wire [3:0] op_main;
 wire [3:0] op_sub;
 wire [7:0] alu_out;
-wire [7:0] alu_carry;
+wire alu_carry;
 
 // pseudorandom generator output
 wire [7:0] lfsr_out;
+
+reg store_v;
+reg store_carry;
 
 //CPU states
 localparam [7:0] 
@@ -67,9 +71,39 @@ localparam [7:0]
 	state_fetch_2 = 7'h1,
 	state_fetch_end = 7'h2,
 	state_decode = 7'h3,
-	state_execute = 7'h4;
+	state_execute = 7'h4,
+	state_store_v = 7'h5,
+	state_store_carry = 7'h6,
+	state_store_vx_vy = 7'h7,
+	state_instr_b = 7'h8,
+	state_save_registers = 7'h9,
+	state_load_registers = 7'ha;
 	
-reg [7:0] state;
+reg [7:0] state = state_fetch_1;
+
+reg [7:0] next_carry;
+
+reg register_write_enable;
+reg [3:0] register_read_1;
+reg [3:0] register_read_2;
+reg [3:0] register_write;
+reg [7:0] register_write_data;
+wire [7:0] register_read_1_data;
+wire [7:0] register_read_2_data;
+
+register_file register_file_inst
+(
+	.clk(clk) ,	// input  clk_sig
+	.reset(reset) ,	// input  reset_sig
+	.write_enable(register_write_enable) ,	// input  write_enable_sig
+	.select_input(register_write) ,	// input [3:0] select_input_sig
+	.input_data(register_write_data) ,	// input [7:0] input_data_sig
+	.select_output1(register_read_1) ,	// input [3:0] select_output1_sig
+	.select_output2(register_read_2) ,	// input [3:0] select_output2_sig
+	.output1_data(register_read_1_data) ,	// output [7:0] output1_data_sig
+	.output2_data(register_read_2_data) 	// output [7:0] output2_data_sig
+);
+
 
 decoder decoder(
 	.opcode(opcode),
@@ -113,7 +147,7 @@ always @(posedge clk) begin
 	end
 end
 
-//timer countdown
+//timer countdown - TODO @ 60 Hz
 always @(posedge clk) begin
 	if(cpu_tick) begin
 		if(delay_timer > 0)
@@ -125,21 +159,21 @@ end
 
 //TODO see https://github.com/asinghani/pifive-cpu/blob/main/cpu/rtl/decode/decode.sv
 always @(posedge clk) begin 
-	if(cpu_tick) begin
-		write_enable <= 1'b1;
+	//if(cpu_tick) begin
+		write_enable <= 1'b0;
 		//fetch, decode, execute
 		//fetch byte 1
 		case(state)
 				state_fetch_1:
 				begin
 					//MAR = PC
-					address_out <= PC;
-					state <= state_fetch_2;
+					address_in <= PC;
 					PC <= PC + 1'b1;
+					state <= state_fetch_2;
 				end
 				state_fetch_2: 
 				begin
-					address_out <= PC;
+					address_in <= PC;
 					PC <= PC + 1'b1;
 					//store first half of opcode 
 					opcode[15:8] <= data_in;
@@ -148,31 +182,59 @@ always @(posedge clk) begin
 				state_fetch_end: 
 				begin
 					//store second half of opcode
-					opcode [7:0] = data_in;	
-					state <= state_decode;
+					opcode [7:0] <= data_in;	
+					state <= state_decode;					
 				end
-				state_decode:
+				state_decode: //decoder now decoded x,y
 				begin
 					//retrieve vx, vy
-					vx = reg_V[x];
-					vy = reg_V[y];
+					register_read_1 <= x;
+					register_read_2 <= y;
+					state <= state_store_vx_vy;
+				end
+				state_store_vx_vy:
+				begin
+					vx <= register_read_1_data;
+					vy <= register_read_2_data;
 					state <= state_execute;
 					//do stuff based on the main and sub opcode
 				end
+				state_store_v: //store reg[vx] and potentially reg[15] with the carry flag
+				begin
+					if(store_v) begin
+						register_write <= x;
+						register_write_data <= vx;
+						register_write_enable <= 1'b1;
+						store_v <= 1'b0;
+					end
+					if(store_carry) begin
+						state <= state_store_carry;
+					end
+					else
+						state <= state_fetch_1;
+				end
+				state_store_carry:
+				begin
+					register_write_enable <= 1'b1;
+					register_write_data <= next_carry;
+					register_write <= 15;
+					store_carry <= 1'b0;
+					state <= state_fetch_1;
+				end
+				state_instr_b:
+				begin //we requested data into register_read_1
+					PC <= register_read_1 + nnn;
+				end
 				state_execute:
 				begin
-					case (op_main)
-						4'h8: //ALU
-							begin
-							reg_V[x] <= alu_out;
-							reg_V[15] <= alu_carry;
-							end
+					state <= state_fetch_1;
+					case (op_main)						
 						4'h0: // display / flow
 							case (op_sub)
-								4'h0: begin
+								O_DISP_CLEAR: begin
 									//TODO clear screen
 								end
-								4'h1: // return from subroutine
+								O_RETURN: // return from subroutine
 								begin
 									PC <= stack[SP-1'b1];
 									SP <= SP - 1'b1;
@@ -206,18 +268,40 @@ always @(posedge clk) begin
 							end
 						end
 						4'h6: // vx = nn
-							reg_V[x] <= nn;
+							begin
+							vx <= nn;
+							store_v <= 1'b1;
+							state <= state_store_v;
+							end
 						4'h7: // vx += nn
-							reg_V[x] <= reg_V[x] + nn;
+						begin
+							vx <= vx + nn;
+							store_v <= 1'b1;							
+							state <= state_store_v;
+						end
+						4'h8: //ALU
+							begin
+							vx <= alu_out;
+							store_v <= 1'b1;
+							next_carry <= alu_carry;
+							store_carry <= 1'b1;
+							end
 						4'hA:
 							I <= nnn;
 						4'hB:
-							PC <= reg_V[0] + nnn;
+							// one more cycle to fetch V[0];
+							begin
+							state <= state_instr_b;
+							register_read_1 <= 0;
+							end
 						4'hC: // random & NN
-							reg_V[0] <= lfsr_out & nn;
+						begin
+							vx <= lfsr_out & nn;
+							store_v <= 1'b1;
+						end
 						//TODO 4'hD draw
 						4'hD:
-							reg_V[3] <= I; //DUMMY assignment
+							vx <= I; //DUMMY assignment
 						//TODO 4'hE
 						4'hE:
 							case (op_sub)
@@ -233,11 +317,17 @@ always @(posedge clk) begin
 						4'hF:
 							case (op_sub)
 								O_FX07:
-									reg_V[x] <= delay_timer;
+									begin
+									vx <= delay_timer;
+									store_v <= 1'b1;
+									end
 								O_FX0A:
 									//TODO get key, also don't advance PC if it's not pressed
-									reg_V[x] <= 8'hFF;
-								O_FX15:
+									begin
+									vx <= 8'hFF;
+									store_v <= 1'b1;
+									end
+								//O_FX15:
 									//TODO delay timer - avoid clash with delay timer decrementer
 //									delay_timer <= vx;
 								O_FX18:
@@ -252,17 +342,19 @@ always @(posedge clk) begin
 									data_out <= 8'hFF;
 									write_enable <= 1'b1;
 									end
-								O_FX55: //reg_dump - FSM
+								O_FX55: //TODO reg_dump - FSM
 									begin
 									address_out <= I;
-									write_enable <= 1'b0;
-									data_out <= reg_V[x]; //0 to X
+									write_enable <= 1'b1;
+									data_out <= vx; // TODO 0 to X
+									state <= state_save_registers;
 									end
-								O_FX65: //reg load - FSM
+								O_FX65: //TODO reg load - FSM
 									begin
-									address_out <= I;
+									address_in <= I;
 									//TODO increase offset
-									reg_V[x] <= data_in; //0 to X
+									vx <= data_in; //0 to X
+									state <= state_load_registers;
 									end
 							endcase
 							
@@ -273,7 +365,7 @@ always @(posedge clk) begin
 //				
 		endcase
 		
-	end
+	//end
 end
 
 endmodule
