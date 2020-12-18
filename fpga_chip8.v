@@ -3,7 +3,10 @@ module fpga_chip8(
 	input wire reset, //active low
 	output reg led,
 	output wire rs, rw, en, //LCD control pins
-	output wire [7:0] dat //LCD data
+	output wire [7:0] dat, //LCD data
+	output wire vga_h_sync, 
+	output wire vga_v_sync, 
+	output wire [2:0] vga_rgb
 );
 
 reg [31:0] timer;                  
@@ -73,18 +76,57 @@ chip8_cpu cpu(
 
 reg renderer_start;
 
-renderer renderer_inst
-(
-	.clk(clk) ,	// input  clk_sig
-	.fb_write_address(fb_write_address) ,	// output [9:0] fb_write_address_sig
-	.fb_write_enable(fb_we) ,	// output  fb_write_enable_sig
-	.fb_ram_in(fb_ram_in) ,	// output [7:0] fb_ram_in_sig
-	.main_ram_read_address(read_address) ,	// output [11:0] cpu_ram_read_address_sig
-	.main_ram_out(ram_out) ,	// input [7:0] cpu_ram_out_sig
-	.start_signal(renderer_start) ,	// input  start_signal_sig
-	.finished_signal(finished_signal_sig) 	// output  finished_signal_sig
-);
+//renderer renderer_inst
+//(
+//	.clk(clk) ,	// input  clk_sig
+//	.fb_write_address(fb_write_address) ,	// output [9:0] fb_write_address_sig
+//	.fb_write_enable(fb_we) ,	// output  fb_write_enable_sig
+//	.fb_ram_in(fb_ram_in) ,	// output [7:0] fb_ram_in_sig
+//	.main_ram_read_address(read_address) ,	// output [11:0] cpu_ram_read_address_sig
+//	.main_ram_out(ram_out) ,	// input [7:0] cpu_ram_out_sig
+//	.start_signal(renderer_start) ,	// input  start_signal_sig
+//	.finished_signal(finished_signal_sig) 	// output  finished_signal_sig
+//);
 
+///////////////
+//     VGA
+//////////////
+
+//25 mhz pixel clock
+reg pixel_tick;
+
+// 25 mhz pixel clock
+always @(posedge clk)
+begin
+	pixel_tick <= ~pixel_tick;
+end
+
+wire in_display_area;
+wire [9:0] pixel_x;
+wire [9:0] pixel_y;
+wire [6:0] pixel_x_10;
+wire [6:0] pixel_y_10;
+
+hvsync_generator syncgen(.clk(pixel_tick), 
+	.vga_h_sync(vga_h_sync), 
+	.vga_v_sync(vga_v_sync),
+	.in_display_area(in_display_area), 
+	.counter_x(pixel_x), 
+	.counter_y(pixel_y),
+	.counter_x_10(pixel_x_10),
+	.counter_y_10(pixel_y_10));
+	
+pixel_generator pixgen(
+	.clk(pixel_tick),
+	.video_on(in_display_area),
+	.pixel_x(pixel_x),
+	.pixel_y(pixel_y),
+	.rgb(vga_rgb),
+	.address_out(read_address),
+	.data_in(ram_out),
+	.pixel_x_10(pixel_x_10),
+	.pixel_y_10(pixel_y_10)
+);
 
 always@(posedge clk) begin
 	if (timer == TIMER_LIMIT) begin    
