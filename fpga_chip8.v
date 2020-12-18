@@ -16,11 +16,11 @@ localparam  TIMER_LIMIT = 25_000_000;
 
 // memory wires
 // framebuffer
-wire fb_we; //ram write enable
-wire [9:0] fb_write_address;
-wire [9:0] fb_read_address;
-wire [7:0] fb_ram_in;
-wire [7:0] fb_ram_out;
+//wire fb_we; //ram write enable
+//wire [9:0] fb_write_address;
+//wire [9:0] fb_read_address;
+//wire [7:0] fb_ram_in;
+//wire [7:0] fb_ram_out;
 // ram
 wire we; //ram write enable
 wire [11:0] write_address;
@@ -34,14 +34,14 @@ wire [15:0] keys; //TODO wire to the debounced keypad
 //reg [9:0] current_address = 6'h0;
 
 // display pixel buffer
-ram framebuffer(
-   .clk(clk),
-	.q(fb_ram_out), 
-	.d(fb_ram_in), 
-	.write_address(fb_write_address), 
-	.read_address(fb_read_address), 
-	.we(fb_we)
-);
+//ram framebuffer(
+//   .clk(clk),
+//	.q(fb_ram_out), 
+//	.d(fb_ram_in), 
+//	.write_address(fb_write_address), 
+//	.read_address(fb_read_address), 
+//	.we(fb_we)
+//);
 
 chip8_ram ram(
 	.clk(clk),
@@ -53,15 +53,15 @@ chip8_ram ram(
 );
 
 // display controller
-LCD12864 lcd(
-		.clk(clk),
-		.rs(rs), 
-		.rw(rw), 
-		.en(en), 
-		.dat(dat),
-		.address_out(fb_read_address),
-		.data_in(fb_ram_out)
-);
+//LCD12864 lcd(
+//		.clk(clk),
+//		.rs(rs), 
+//		.rw(rw), 
+//		.en(en), 
+//		.dat(dat),
+//		.address_out(fb_read_address),
+//		.data_in(fb_ram_out)
+//);
 
 chip8_cpu cpu(
 	.clk(clk),
@@ -74,7 +74,7 @@ chip8_cpu cpu(
 	.keys(keys)
 );
 
-reg renderer_start;
+//reg renderer_start;
 
 //renderer renderer_inst
 //(
@@ -128,15 +128,15 @@ pixel_generator pixgen(
 	.pixel_y_10(pixel_y_10)
 );
 
-always@(posedge clk) begin
-	if (timer == TIMER_LIMIT) begin    
-		timer <= 0;                       
-		led <= ~led;	
-		renderer_start <= 1'b1;
-   end else begin
-	   timer <= timer + 1'b1;
-		renderer_start <= 1'b0;
-	end
-end
+//always@(posedge clk) begin
+//	if (timer == TIMER_LIMIT) begin    
+//		timer <= 0;                       
+//		led <= ~led;	
+//		renderer_start <= 1'b1;
+//   end else begin
+//	   timer <= timer + 1'b1;
+//		renderer_start <= 1'b0;
+//	end
+//end
 
 endmodule
