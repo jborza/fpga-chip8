@@ -15,12 +15,7 @@ localparam  TIMER_LIMIT = 25_000_000;
 
 
 // memory wires
-// framebuffer
-//wire fb_we; //ram write enable
-//wire [9:0] fb_write_address;
-//wire [9:0] fb_read_address;
-//wire [7:0] fb_ram_in;
-//wire [7:0] fb_ram_out;
+
 // ram
 wire we; //ram write enable
 wire [11:0] write_address;
@@ -33,48 +28,38 @@ wire [7:0] ascii_scan_data;
 wire [15:0] keys; //TODO wire to the debounced keypad
 //reg [9:0] current_address = 6'h0;
 
-// display pixel buffer
-//ram framebuffer(
-//   .clk(clk),
-//	.q(fb_ram_out), 
-//	.d(fb_ram_in), 
-//	.write_address(fb_write_address), 
-//	.read_address(fb_read_address), 
-//	.we(fb_we)
-//);
-
-chip8_ram ram(
-	.clk(clk),
-	.q(ram_out),
-	.d(ram_in),
-	.write_address(write_address), 
-	.read_address(read_address), 
-	.we(we)
-);
+////////////
+// LCD 
+///////////
+// framebuffer
+wire fb_we; //ram write enable
+wire [9:0] fb_write_address;
+wire [9:0] fb_read_address;
+wire [7:0] fb_ram_in;
+wire [7:0] fb_ram_out;
 
 // display controller
-//LCD12864 lcd(
-//		.clk(clk),
-//		.rs(rs), 
-//		.rw(rw), 
-//		.en(en), 
-//		.dat(dat),
-//		.address_out(fb_read_address),
-//		.data_in(fb_ram_out)
-//);
-
-chip8_cpu cpu(
-	.clk(clk),
-	.reset(~reset),
-	//.address_out(write_address),
-	.address_out(read_address_tmp),
-	.data_in(ram_out_tmp),
-	.write_enable(we),
-	.data_out(ram_in_tmp),
-	.keys(keys)
+LCD12864 lcd(
+		.clk(clk),
+		.rs(rs), 
+		.rw(rw), 
+		.en(en), 
+		.dat(dat),
+		.address_out(fb_read_address),
+		.data_in(fb_ram_out)
 );
 
-//reg renderer_start;
+// LCD display pixel buffer
+ram framebuffer(
+   .clk(clk),
+	.q(fb_ram_out), 
+	.d(fb_ram_in), 
+	.write_address(fb_write_address), 
+	.read_address(fb_read_address), 
+	.we(fb_we)
+);
+
+reg renderer_start;
 
 //renderer renderer_inst
 //(
@@ -88,55 +73,90 @@ chip8_cpu cpu(
 //	.finished_signal(finished_signal_sig) 	// output  finished_signal_sig
 //);
 
+always@(posedge clk) begin
+	if (timer == TIMER_LIMIT) begin    
+		timer <= 0;                       
+		led <= ~led;	
+		renderer_start <= 1'b1;
+   end else begin
+	   timer <= timer + 1'b1;
+		renderer_start <= 1'b0;
+	end
+end
+
+chip8_ram ram(
+	.clk(clk),
+	.q(ram_out),
+	.d(ram_in),
+	.write_address(write_address), 
+	.read_address(read_address_tmp), 
+	.we(we)
+);
+
+wire [7:0] rom_out;
+
+dummy_rom rom(
+	.read_address(read_address),
+	.rom_out(rom_out)
+);
+
+
+chip8_cpu cpu(
+	.clk(clk),
+	.reset(1'b0),//(~reset),
+	.address_in(read_address),
+	.address_out(write_address),
+	//.data_in(ram_out),
+	.data_in(rom_out),
+	.write_enable(we),
+	.data_out(ram_in),
+	.keys(keys)
+);
+
+
+
+
+
 ///////////////
 //     VGA
 //////////////
 
 //25 mhz pixel clock
-reg pixel_tick;
-
-// 25 mhz pixel clock
-always @(posedge clk)
-begin
-	pixel_tick <= ~pixel_tick;
-end
-
-wire in_display_area;
-wire [9:0] pixel_x;
-wire [9:0] pixel_y;
-wire [6:0] pixel_x_10;
-wire [6:0] pixel_y_10;
-
-hvsync_generator syncgen(.clk(pixel_tick), 
-	.vga_h_sync(vga_h_sync), 
-	.vga_v_sync(vga_v_sync),
-	.in_display_area(in_display_area), 
-	.counter_x(pixel_x), 
-	.counter_y(pixel_y),
-	.counter_x_10(pixel_x_10),
-	.counter_y_10(pixel_y_10));
-	
-pixel_generator pixgen(
-	.clk(pixel_tick),
-	.video_on(in_display_area),
-	.pixel_x(pixel_x),
-	.pixel_y(pixel_y),
-	.rgb(vga_rgb),
-	.address_out(read_address),
-	.data_in(ram_out),
-	.pixel_x_10(pixel_x_10),
-	.pixel_y_10(pixel_y_10)
-);
-
-//always@(posedge clk) begin
-//	if (timer == TIMER_LIMIT) begin    
-//		timer <= 0;                       
-//		led <= ~led;	
-//		renderer_start <= 1'b1;
-//   end else begin
-//	   timer <= timer + 1'b1;
-//		renderer_start <= 1'b0;
-//	end
+//reg pixel_tick;
+//
+//// 25 mhz pixel clock
+//always @(posedge clk)
+//begin
+//	pixel_tick <= ~pixel_tick;
 //end
+//
+//wire in_display_area;
+//wire [9:0] pixel_x;
+//wire [9:0] pixel_y;
+//wire [6:0] pixel_x_10;
+//wire [6:0] pixel_y_10;
+//
+//hvsync_generator syncgen(.clk(pixel_tick), 
+//	.vga_h_sync(vga_h_sync), 
+//	.vga_v_sync(vga_v_sync),
+//	.in_display_area(in_display_area), 
+//	.counter_x(pixel_x), 
+//	.counter_y(pixel_y),
+//	.counter_x_10(pixel_x_10),
+//	.counter_y_10(pixel_y_10));
+//	
+//pixel_generator pixgen(
+//	.clk(pixel_tick),
+//	.video_on(in_display_area),
+//	.pixel_x(pixel_x),
+//	.pixel_y(pixel_y),
+//	.rgb(vga_rgb),
+//	.address_out(read_address),
+//	.data_in(ram_out),
+//	.pixel_x_10(pixel_x_10),
+//	.pixel_y_10(pixel_y_10)
+//);
+
+
 
 endmodule
