@@ -8,7 +8,7 @@ module chip8_ram(
 	input wire  we
 );
 
-	reg [7:0] mem [4095:0]; 
+	reg [7:0] mem [0:4095]; 
 	
 	initial begin
 		$readmemb("ram-chip8.txt", mem);
