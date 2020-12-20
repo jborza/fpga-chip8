@@ -74,10 +74,12 @@ localparam [7:0]
 	state_execute = 7'h4,
 	state_store_v = 7'h5,
 	state_store_carry = 7'h6,
-	state_store_vx_vy = 7'h7,
-	state_instr_b = 7'h8,
-	state_save_registers = 7'h9,
-	state_load_registers = 7'ha;
+	state_store_vx = 7'h7,
+	state_store_vy = 7'h8,
+	state_instr_b = 7'h9,
+	state_save_registers = 7'ha,
+	state_load_registers = 7'hb,
+	state_draw = 7'hc;
 	
 reg [7:0] state = state_fetch_1;
 
@@ -85,11 +87,11 @@ reg [7:0] next_carry;
 
 reg register_write_enable;
 reg [3:0] register_read_1;
-reg [3:0] register_read_2;
+//reg [3:0] register_read_2;
 reg [3:0] register_write;
 reg [7:0] register_write_data;
 wire [7:0] register_read_1_data;
-wire [7:0] register_read_2_data;
+//wire [7:0] register_read_2_data;
 
 register_file register_file_inst
 (
@@ -99,11 +101,10 @@ register_file register_file_inst
 	.select_input(register_write) ,	// input [3:0] select_input_sig
 	.input_data(register_write_data) ,	// input [7:0] input_data_sig
 	.select_output1(register_read_1) ,	// input [3:0] select_output1_sig
-	.select_output2(register_read_2) ,	// input [3:0] select_output2_sig
-	.output1_data(register_read_1_data) ,	// output [7:0] output1_data_sig
-	.output2_data(register_read_2_data) 	// output [7:0] output2_data_sig
+//	.select_output2(register_read_2) ,	// input [3:0] select_output2_sig
+	.output1_data(register_read_1_data)	// output [7:0] output1_data_sig
+//	.output2_data(register_read_2_data) 	// output [7:0] output2_data_sig
 );
-
 
 decoder decoder(
 	.opcode(opcode),
@@ -160,7 +161,8 @@ end
 //TODO see https://github.com/asinghani/pifive-cpu/blob/main/cpu/rtl/decode/decode.sv
 always @(posedge clk) begin 
 	//if(cpu_tick) begin
-		write_enable <= 1'b0;
+		write_enable <= 1'b0; //TODO is there a better way to reset the flags?
+		register_write_enable <= 1'b0; //TODO is there a better way to reset the flags?
 		//fetch, decode, execute
 		//fetch byte 1
 		case(state)
@@ -187,17 +189,21 @@ always @(posedge clk) begin
 				end
 				state_decode: //decoder now decoded x,y
 				begin
-					//retrieve vx, vy
+					//retrieve vx, then vy
 					register_read_1 <= x;
-					register_read_2 <= y;
-					state <= state_store_vx_vy;
+					state <= state_store_vx;
 				end
-				state_store_vx_vy:
+				state_store_vx:
 				begin
+					//store vx, retrieve vy
 					vx <= register_read_1_data;
-					vy <= register_read_2_data;
+					register_read_1 <= y;
+					state <= state_store_vy;
+				end
+				state_store_vy:
+				begin
+					vy <= register_read_1_data;
 					state <= state_execute;
-					//do stuff based on the main and sub opcode
 				end
 				state_store_v: //store reg[vx] and potentially reg[15] with the carry flag
 				begin
@@ -223,8 +229,28 @@ always @(posedge clk) begin
 				end
 				state_instr_b:
 				begin //we requested data into register_read_1
-					PC <= register_read_1 + nnn;
+					PC <= register_read_1_data + nnn;
 				end
+				state_save_registers:
+				begin
+					//fill memory at I to I+x (inclusive!) with values of v0 to vx
+					if(register_read_1 <= x) begin
+						write_enable <= 1'b1;
+						//set output value to I + i
+						address_out <= I + register_read_1;
+						//set output data to V[i]
+						data_out <= register_read_1_data; //register file output now contains i-1						
+						//increment i
+						register_read_1 <= register_read_1 + 1;
+					end else
+						state <= state_fetch_1;
+				end
+				
+				state_load_registers:
+				begin
+					// TODO implement
+				end
+				
 				state_execute:
 				begin
 					state <= state_fetch_1;
@@ -286,6 +312,12 @@ always @(posedge clk) begin
 							next_carry <= alu_carry;
 							store_carry <= 1'b1;
 							end
+						4'h9: //if(vx != vy)
+							begin
+								if(vx!=vy) begin
+									PC <= PC + 2'd2;
+								end
+							end
 						4'hA:
 							I <= nnn;
 						4'hB:
@@ -344,9 +376,7 @@ always @(posedge clk) begin
 									end
 								O_FX55: //TODO reg_dump - FSM
 									begin
-									address_out <= I;
-									write_enable <= 1'b1;
-									data_out <= vx; // TODO 0 to X
+									register_read_1 <= 0;
 									state <= state_save_registers;
 									end
 								O_FX65: //TODO reg load - FSM
