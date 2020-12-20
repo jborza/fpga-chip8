@@ -318,8 +318,8 @@ always @(posedge clk) begin
 									sound_timer <= vx;
 								O_FX1E: // I += Vx
 									I <= I + vx;
-								O_FX29: //TODO sprites
-									I <= 8'hFF;
+								O_FX29: //sprites address
+									I <= vx * 5 + 10;
 								O_FX33: //TODO BCD - 3/4 step FSM
 									begin
 									address_out <= I;
