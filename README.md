@@ -2,8 +2,8 @@
 
 ## Opcodes implementation status
 
-| Opcode | Implemented | Tested |
-| - | - | - |
+| Opcode | Implemented | Tested | Note
+| - | - | - | - 
 | 0NNN | N/A | N/A
 | 00E0 | N | N
 | 00EE | Y | N
@@ -29,5 +29,5 @@
 | FX1E | Y | N
 | FX29 | Y | N
 | FX33 | Y | N
-| FX55 | N | N
-| FX65 | N | N
+| FX55 | Y | N | TODO create a test case
+| FX65 | Y | N | TODO create a test case

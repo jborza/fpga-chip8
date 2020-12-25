@@ -70,9 +70,11 @@ wire [7:0] lfsr_out;
 reg store_v;
 reg store_carry;
 
+reg [7:0] temp; //temporary register used by the D instruction
+
 //CPU states
 localparam [7:0] 
-	state_fetch_hi = 7'h0,
+	state_fetch_hi = 7'h0, //initial state
 	state_fetch_lo = 7'h1,
 	state_fetch_vx = 7'h2,
 	state_fetch_vy = 7'h3,
@@ -161,6 +163,18 @@ end
 
 //TODO see https://github.com/asinghani/pifive-cpu/blob/main/cpu/rtl/decode/decode.sv
 always @(posedge clk) begin 
+	if(reset) begin
+		PC <= 12'h200;
+		I <= 0;
+		SP <= 0;
+		delay_timer <= 0;
+		sound_timer <= 0;
+		state <= state_fetch_hi;
+		opcode <= 0;
+		address_in <= 0;
+		write_enable <= 1'b0;
+		register_write_enable <= 1'b0;
+	end else begin
 	//if(cpu_tick) begin
 		write_enable <= 1'b0; //TODO is there a better way to reset the flags?
 		register_write_enable <= 1'b0; //TODO is there a better way to reset the flags?
@@ -171,14 +185,13 @@ always @(posedge clk) begin
 				begin
 					// request high byte of the opcode
 					address_in <= PC;
-					PC <= PC + 1'b1;
 					state <= state_fetch_lo;
 				end
 				state_fetch_lo: //fetch lo and vx
 				begin
 					// request low byte, store high byte of the opcode, request vx
-					address_in <= PC;
-					PC <= PC + 1'b1;
+					address_in <= PC + 1;
+					PC <= PC + 2'b1;
 					//store first half of opcode 
 					opcode[15:8] <= data_in;
 					register_read_1 <= data_in[3:0]; //x
@@ -279,9 +292,13 @@ always @(posedge clk) begin
 							vx <= lfsr_out & nn;
 							store_v <= 1'b1;
 						end
-						//TODO 4'hD draw
+						// 4'hD draw
 						4'hD:
+						begin
 							state <= state_draw;
+							address_in <= I;
+							temp <= 0;
+						end
 						//TODO 4'hE
 						4'hE:
 							case (op_sub)
@@ -401,6 +418,21 @@ always @(posedge clk) begin
 				state_draw:
 				begin
 					//TODO implement
+//					if(temp <= n) begin
+//						//draw n bytes of sprite starting at I at coordinates vx, vy, sprites should wrap around the screen
+//						//collision bit should be set if any pixels were erased. We can determine this by comparing initial state and the sprite row
+//						
+//						//loop n times, starting at I
+//						//in each loop, read a byte, XOR onto screen memory 
+//						
+//						//1. request memory at I + current_row					
+//						address_in <= I + temp;
+//						// previosly requested data appears in data_in
+//						data_out <= data_in 
+//						
+//					end else begin
+//						state <= state_fetch_hi;
+//					end
 					state <= state_fetch_hi;
 				end
 					//determine next state based on the opcode
@@ -408,7 +440,8 @@ always @(posedge clk) begin
 //				
 		endcase
 		
-	//end
+		state_out <= state;
+	end
 end
 
 endmodule

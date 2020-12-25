@@ -6,7 +6,8 @@ module fpga_chip8(
 	output wire [7:0] dat, //LCD data
 	output wire vga_h_sync, 
 	output wire vga_v_sync, 
-	output wire [2:0] vga_rgb
+	output wire [2:0] vga_rgb,
+	output wire [7:0] leds
 );
 
 reg [31:0] timer;                  
@@ -32,32 +33,49 @@ wire [15:0] keys; //TODO wire to the debounced keypad
 // LCD 
 ///////////
 // framebuffer
-wire fb_we; //ram write enable
-wire [9:0] fb_write_address;
-wire [9:0] fb_read_address;
-wire [7:0] fb_ram_in;
-wire [7:0] fb_ram_out;
+//reg fb_we; //ram write enable
+//reg [9:0] fb_write_address;
+//wire [9:0] fb_read_address;
+//reg [7:0] fb_ram_in;
+//wire [7:0] fb_ram_out;
+//
+//// display controller
+//LCD12864 lcd(
+//		.clk(clk),
+//		.rs(rs), 
+//		.rw(rw), 
+//		.en(en), 
+//		.dat(dat),
+//		.address_out(fb_read_address),
+//		.data_in(fb_ram_out)
+//);
+//
+//// LCD display pixel buffer
+//ram framebuffer(
+//   .clk(clk),
+//	.q(fb_ram_out), 
+//	.d(fb_ram_in), 
+//	.write_address(fb_write_address), 
+//	.read_address(fb_read_address), 
+//	.we(fb_we)
+//);
 
-// display controller
-LCD12864 lcd(
-		.clk(clk),
-		.rs(rs), 
-		.rw(rw), 
-		.en(en), 
-		.dat(dat),
-		.address_out(fb_read_address),
-		.data_in(fb_ram_out)
-);
 
-// LCD display pixel buffer
-ram framebuffer(
-   .clk(clk),
-	.q(fb_ram_out), 
-	.d(fb_ram_in), 
-	.write_address(fb_write_address), 
-	.read_address(fb_read_address), 
-	.we(fb_we)
-);
+//lfsr lfsr_top(
+//	.clk(clk),
+//	.enable(1'b1),
+//	.out(lfsr_out)
+//);
+//
+//// pseudorandom generator output
+//wire [7:0] lfsr_out;
+
+//always @(posedge clk)
+//begin
+//	fb_write_address <= fb_write_address + 1;
+//	fb_ram_in <= fb_write_address;
+//	fb_we <= 1'b1;
+//end
 
 reg renderer_start;
 
@@ -89,28 +107,29 @@ chip8_ram ram(
 	.q(ram_out),
 	.d(ram_in),
 	.write_address(write_address), 
-	.read_address(read_address_tmp), 
+	.read_address(read_address), 
 	.we(we)
 );
 
 wire [7:0] rom_out;
 
 dummy_rom rom(
-	.read_address(read_address),
+	.read_address(read_address_rom),
 	.rom_out(rom_out)
 );
 
 
 chip8_cpu cpu(
 	.clk(clk),
-	.reset(1'b0),//(~reset),
+	.reset(~reset),//(~reset),
 	.address_in(read_address),
 	.address_out(write_address),
-	//.data_in(ram_out),
-	.data_in(rom_out),
+	.data_in(ram_out),
+//	.data_in(rom_out),
 	.write_enable(we),
 	.data_out(ram_in),
-	.keys(keys)
+	.keys(keys),
+	.state_out(leds)
 );
 
 
