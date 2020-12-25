@@ -3,9 +3,7 @@
 module decoder_sim  ; 
 
   wire  [3:0]  op_sub   ; 
-  reg  [11:0]  PC   ; 
   wire  [3:0]  op_main   ; 
-  wire  jump   ; 
   wire  [3:0]  x   ; 
   wire  [2:0]  alu_op   ; 
   wire  [3:0]  y   ; 
@@ -17,9 +15,7 @@ module decoder_sim  ;
   decoder 
    DUT  ( 
        .op_sub (op_sub ) ,
-      .PC (PC ) ,
       .op_main (op_main ) ,
-      .jump (jump ) ,
       .x (x ) ,
       .alu_op (alu_op ) ,
       .y (y ) ,
@@ -106,7 +102,6 @@ module decoder_sim  ;
 // Start Time = 0 ps, End Time = 1 ns, Period = 0 ps
   initial
   begin
-	  PC  = 12'b001000000000  ;
 	 # 1000 ;
 // dumped values till 1 ns
   end
