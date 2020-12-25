@@ -22,8 +22,10 @@ always @* begin
 	nnn = opcode[11:0];
 	nn = opcode [7:0];
 	n = opcode[3:0];
-	//op_main = opcode[15:12];
 end
+
+assign alu_switchxy = ((opcode[15:12] == 4'h8) && (opcode[3:0] == 4'h7)) ? 1'b1 : 1'b0;
+assign op_main = opcode[15:12];
 
 //generate sub-command
 //relevant: 0, E, F
@@ -106,7 +108,6 @@ always @* begin
 	end
 end
 
-assign alu_switchxy = ((opcode[15:12] == 4'h8) && (opcode[3:0] == 4'h7)) ? 1'b1 : 1'b0;
-assign op_main = opcode[15:12];
+
 
 endmodule
