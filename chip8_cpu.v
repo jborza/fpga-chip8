@@ -6,13 +6,16 @@ module chip8_cpu(
 	output reg write_enable,
 	output reg[11:0] address_out,
 	output reg [7:0] data_out,
-	input wire [15:0] keys
+	input wire [15:0] keys,
+	output reg [7:0] state_out
 );
 
 `include "chip8_cpu_opcodes.vh"
 
 // memory map:
-// 010..060 - font
+// 000..050 - font
+// 100..1FF - framebuffer
+// 200..FFF - program
 
 //display RAM (
 //chip-8 RAM
@@ -147,14 +150,14 @@ always @(posedge clk) begin
 end
 
 //timer countdown - TODO @ 60 Hz
-always @(posedge clk) begin
-	if(cpu_tick) begin
-		if(delay_timer > 0)
-			delay_timer <= delay_timer - 1'b1;
-		if(sound_timer > 0)
-			sound_timer <= sound_timer - 1'b1;
-	end
-end
+//always @(posedge clk) begin
+//	if(cpu_tick) begin
+//		if(delay_timer > 0)
+//			delay_timer <= delay_timer - 1'b1;
+//		if(sound_timer > 0)
+//			sound_timer <= sound_timer - 1'b1;
+//	end
+//end
 
 //TODO see https://github.com/asinghani/pifive-cpu/blob/main/cpu/rtl/decode/decode.sv
 always @(posedge clk) begin 
@@ -189,12 +192,6 @@ always @(posedge clk) begin
 					register_read_1 <= data_in[7:4]; //y
 					state <= state_fetch_vy;
 				end
-//				state_fetch_vy:
-//				begin
-//					//store vx, retrieve vy
-//					register_read_1 <= y;
-//					state <= state_execute;
-//				end
 				state_fetch_vy:
 				begin
 					vy <= register_read_1_data;
@@ -284,7 +281,6 @@ always @(posedge clk) begin
 						end
 						//TODO 4'hD draw
 						4'hD:
-							//vx <= I; //DUMMY assignment
 							state <= state_draw;
 						//TODO 4'hE
 						4'hE:
@@ -311,22 +307,22 @@ always @(posedge clk) begin
 									vx <= 8'hFF;
 									store_v <= 1'b1;
 									end
-								//O_FX15:
+								O_FX15:
 									//TODO delay timer - avoid clash with delay timer decrementer
-//									delay_timer <= vx;
+									delay_timer <= vx;
 								O_FX18:
 									sound_timer <= vx;
 								O_FX1E: // I += Vx
 									I <= I + vx;
 								O_FX29: //sprites address
-									I <= vx * 5 + 10;
+									I <= vx * 5;
 								O_FX33: //TODO BCD - 3/4 step FSM
 									begin
 									address_out <= I;
 									data_out <= 8'hFF;
 									write_enable <= 1'b1;
 									end
-								O_FX55: //TODO reg_dump - FSM
+								O_FX55: //reg_save - go to FSM
 									begin
 									register_read_1 <= 0;
 									state <= state_save_registers;
@@ -372,23 +368,34 @@ always @(posedge clk) begin
 				state_save_registers:
 				begin
 					//fill memory at I to I+x (inclusive!) with values of v0 to vx
+					// we keep the index in register_read_1
 					if(register_read_1 <= x) begin
 						write_enable <= 1'b1;
-						//set output value to I + i
+						//set output address to I + i
 						address_out <= I + register_read_1;
 						//set output data to V[i]
 						data_out <= register_read_1_data; //register file output now contains i-1						
-						//increment i
+						//increment the index
 						register_read_1 <= register_read_1 + 1;
 					end else
 						state <= state_fetch_hi;
 				end
 				
 				state_load_registers:
-				begin
-					// TODO implement
-					
-					state <= state_fetch_hi;
+				begin 
+					// fill registers v0 to vx (inclusive) with values from memory at I to I+x
+					// The offset from I is increased by 1 for each value written, but I itself is left unmodified.
+					// we keep the index in register_write
+					if(register_write <= x) begin
+						//set the data
+						register_write_enable <= 1'b1;
+						register_write_data <= data_in; 
+						// set input address
+						address_in <= I + register_write;
+						//increment the index
+						register_write <= register_write + 1;						
+					end else
+						state <= state_fetch_hi;
 				end
 				
 				state_draw:
