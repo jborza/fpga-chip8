@@ -91,7 +91,7 @@ localparam [7:0]
 	
 reg [7:0] state = state_fetch_hi;
 
-reg [7:0] next_carry;
+reg [7:0] new_carry;
 
 reg register_write_enable;
 reg [3:0] register_read_1;
@@ -271,7 +271,7 @@ always @(posedge clk) begin
 							begin
 							new_vx <= alu_out;
 							store_v <= 1'b1;
-							next_carry <= alu_carry;
+							new_carry <= alu_carry;
 							store_carry <= 1'b1;
 							end
 						4'h9: //if(vx != vy)
@@ -374,7 +374,7 @@ always @(posedge clk) begin
 				state_store_carry:
 				begin
 					register_write_enable <= 1'b1;
-					register_write_data <= next_carry;
+					register_write_data <= new_carry;
 					register_write <= 15;
 					store_carry <= 1'b0;
 					state <= state_fetch_hi;
