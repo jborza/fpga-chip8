@@ -47,6 +47,7 @@ reg [31:0] tick_counter;
 
 reg [7:0] vx;
 reg [7:0] vy;
+reg [7:0] new_vx;
 
 //instruction decode results
 reg [15:0] opcode;
@@ -256,19 +257,19 @@ always @(posedge clk) begin
 						end
 						4'h6: // vx = nn
 							begin
-							vx <= nn;
+							new_vx <= nn;
 							store_v <= 1'b1;
 							state <= state_store_v;
 							end
 						4'h7: // vx += nn
 						begin
-							vx <= vx + nn;
+							new_vx <= vx + nn;
 							store_v <= 1'b1;							
 							state <= state_store_v;
 						end
 						4'h8: //ALU
 							begin
-							vx <= alu_out;
+							new_vx <= alu_out;
 							store_v <= 1'b1;
 							next_carry <= alu_carry;
 							store_carry <= 1'b1;
@@ -289,7 +290,7 @@ always @(posedge clk) begin
 							end
 						4'hC: // random & NN
 						begin
-							vx <= lfsr_out & nn;
+							new_vx <= lfsr_out & nn;
 							store_v <= 1'b1;
 						end
 						// 4'hD draw
@@ -315,13 +316,13 @@ always @(posedge clk) begin
 							case (op_sub)
 								O_FX07:
 									begin
-									vx <= delay_timer;
+									new_vx <= delay_timer;
 									store_v <= 1'b1;
 									end
 								O_FX0A:
 									//TODO get key, also don't advance PC if it's not pressed
 									begin
-									vx <= 8'hFF;
+									new_vx <= 8'hFF;
 									store_v <= 1'b1;
 									end
 								O_FX15:
@@ -344,11 +345,12 @@ always @(posedge clk) begin
 									register_read_1 <= 0;
 									state <= state_save_registers;
 									end
-								O_FX65: //TODO reg load - FSM
+								O_FX65: //reg load - FSM
 									begin
 									address_in <= I;
 									//TODO increase offset
-									vx <= data_in; //0 to X
+									//vx <= data_in; //0 to X
+									register_write <= 0;
 									state <= state_load_registers;
 									end
 							endcase
@@ -360,13 +362,12 @@ always @(posedge clk) begin
 				begin
 					if(store_v) begin
 						register_write <= x;
-						register_write_data <= vx;
+						register_write_data <= new_vx;
 						register_write_enable <= 1'b1;
 						store_v <= 1'b0;
 					end
-					if(store_carry) begin
+					if(store_carry)
 						state <= state_store_carry;
-					end
 					else
 						state <= state_fetch_hi;
 				end
