@@ -191,8 +191,8 @@ always @(posedge clk) begin
 				state_fetch_lo: //fetch lo and vx
 				begin
 					// request low byte, store high byte of the opcode, request vx
-					address_in <= PC + 1;
-					PC <= PC + 2'b1;
+					address_in <= PC + 1'h1;
+					PC <= PC + 2'h2;
 					//store first half of opcode 
 					opcode[15:8] <= data_in;
 					register_read_1 <= data_in[3:0]; //x
