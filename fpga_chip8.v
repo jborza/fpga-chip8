@@ -113,19 +113,24 @@ chip8_ram ram(
 
 wire [7:0] rom_out;
 
-dummy_rom rom(
-	.read_address(read_address_rom),
-	.rom_out(rom_out)
-);
+//dummy_rom rom(
+//	.read_address(read_address_rom),
+//	.rom_out(rom_out)
+//);
+
+example_rom example_rom (
+	.address(read_address_rom),
+	.clock(clk),
+	.q(rom_out));
 
 
 chip8_cpu cpu(
 	.clk(clk),
 	.reset(~reset),//(~reset),
-	.address_in(read_address),
+	.address_in(read_address_rom),
 	.address_out(write_address),
-	.data_in(ram_out),
-//	.data_in(rom_out),
+//	.data_in(ram_out),
+	.data_in(rom_out),
 	.write_enable(we),
 	.data_out(ram_in),
 	.keys(keys),
