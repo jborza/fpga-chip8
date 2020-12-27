@@ -1,10 +1,12 @@
+`default_nettype none
+
 module chip8_cpu(
 	input wire clk,
 	input wire reset,
-	output reg[11:0] address_in,
+	output reg [11:0] address_in,
 	input wire [7:0] data_in,
 	output reg write_enable,
-	output reg[11:0] address_out,
+	output reg [11:0] address_out,
 	output reg [7:0] data_out,
 	input wire [15:0] keys,
 	output reg [7:0] state_out
@@ -71,7 +73,6 @@ wire [7:0] lfsr_out;
 reg store_v;
 reg store_carry;
 
-reg [7:0] temp; //temporary register used by the D instruction
 
 //CPU states
 localparam [7:0] 
@@ -137,6 +138,35 @@ lfsr lfsr(
 	.out(lfsr_out)
 );
 
+reg ppu_draw;
+wire ppu_busy;
+wire ppu_collision;
+wire [11:0] ppu_mem_read_address;
+wire [11:0] ppu_mem_write_address;
+wire [7:0] ppu_mem_read_data;
+wire [7:0] ppu_mem_write_data;
+wire ppu_mem_read_enable;
+wire ppu_mem_write_enable;
+
+
+ppu ppu(
+	.clk(clk),
+	.reset(reset),
+	.draw(ppu_draw),
+	.address(I),
+	.sprite_height(n),
+	.x(vx),
+	.y(vy),
+	.busy(ppu_busy),
+	.collision(ppu_collision),
+	.mem_read_address(ppu_mem_read_address),
+	.mem_read_data(ppu_mem_read_data),
+	.mem_read_enable(ppu_mem_read_enable),
+	.mem_write_address(ppu_mem_write_address),
+	.mem_write_data(ppu_mem_write_data),
+	.mem_write_enable(ppu_mem_write_enable)
+);
+
 //TODO reset the registers on reset signal
 
 
@@ -144,7 +174,7 @@ lfsr lfsr(
 always @(posedge clk) begin
 	//TODO reset
 	if(tick_counter == 0) begin
-		tick_counter = CLOCKS_PER_CPU_TICK;
+		tick_counter <= CLOCKS_PER_CPU_TICK;
 		cpu_tick <= 1'b1;
 	end else begin
 		tick_counter <= tick_counter - 1;	
@@ -418,23 +448,11 @@ always @(posedge clk) begin
 				
 				state_draw:
 				begin
-					//TODO implement
-//					if(temp <= n) begin
-//						//draw n bytes of sprite starting at I at coordinates vx, vy, sprites should wrap around the screen
-//						//collision bit should be set if any pixels were erased. We can determine this by comparing initial state and the sprite row
-//						
-//						//loop n times, starting at I
-//						//in each loop, read a byte, XOR onto screen memory 
-//						
-//						//1. request memory at I + current_row					
-//						address_in <= I + temp;
-//						// previosly requested data appears in data_in
-//						data_out <= data_in 
-//						
-//					end else begin
-//						state <= state_fetch_hi;
-//					end
-					state <= state_fetch_hi;
+					ppu_draw <= 1'b1;
+					if(!ppu_draw && !ppu_busy) begin
+						new_carry <= ppu_collision;
+						state <= state_store_carry;
+					end				
 				end
 					//determine next state based on the opcode
 //				default:
