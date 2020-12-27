@@ -113,7 +113,7 @@ begin
 		end
 	 end	 		
 
-   default:   next=set0; 
+   default:   next<=set0; 
     endcase 
   //end
  end 

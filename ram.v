@@ -1,3 +1,4 @@
+// 1024 x 8-bit framebuffer
 module ram(
 	input wire clk, 
 	input wire [9:0] read_address,
