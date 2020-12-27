@@ -5,7 +5,7 @@
 | Opcode | Implemented | Tested | Note
 | - | - | - | - 
 | 0NNN | N/A | N/A
-| 00E0 | N | N
+| 00E0 | N | N | TODO clear screen
 | 00EE | Y | N
 | 1NNN | Y | N
 | 2NNN | Y | N
@@ -20,14 +20,14 @@
 | BNNN | Y | N
 | CXNN | Y | N
 | DXYN | Y | N
-| EX9E | N | N
-| EXA1 | N | N
-| FX07 | Y | N
-| FX0A | N | N
+| EX9E | N | N | TODO handle keypresses
+| EXA1 | N | N | TODO handle keypresses
+| FX07 | Y | N 
+| FX0A | N | N | TODO wait until keypressed
 | FX15 | Y | N
 | FX18 | Y | N
 | FX1E | Y | N
 | FX29 | Y | N
-| FX33 | Y | N
+| FX33 | N | N | TODO create a BCD test case
 | FX55 | Y | N | TODO create a test case
 | FX65 | Y | N | TODO create a test case
