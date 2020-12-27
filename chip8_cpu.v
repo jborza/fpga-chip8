@@ -326,9 +326,8 @@ always @(posedge clk) begin
 						// 4'hD draw
 						4'hD:
 						begin
+							ppu_draw <= 1'b1;
 							state <= state_draw;
-							address_in <= I;
-							temp <= 0;
 						end
 						//TODO 4'hE
 						4'hE:
@@ -448,7 +447,7 @@ always @(posedge clk) begin
 				
 				state_draw:
 				begin
-					ppu_draw <= 1'b1;
+					ppu_draw <= 1'b0;
 					if(!ppu_draw && !ppu_busy) begin
 						new_carry <= ppu_collision;
 						state <= state_store_carry;

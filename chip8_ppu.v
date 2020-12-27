@@ -46,7 +46,7 @@ localparam [3:0]
 	STATE_LOAD_RIGHT_WRITE_LEFT = 4'h3,
 	STATE_WRITE_RIGHT = 4'h4;
 	
-reg [3:0] state;
+reg [3:0] state = STATE_WAIT;
 
 assign busy = state != STATE_WAIT;
 
@@ -68,13 +68,14 @@ always @(posedge clk) begin
 					current_row <= 0;
 					mem_read_address <= address + current_row;
 					mem_read_enable <= 1'b1;
-					screen_address <= y * SCREEN_WIDTH_BYTES + (x << 3);
+					screen_address <= y * SCREEN_WIDTH_BYTES + (x >> 3);
+					state <= STATE_LOAD_SPRITE;
 				end
 			end
 			STATE_LOAD_SPRITE:
 			begin
 				$display($time, " ppu: load sprite row %d at $%x", 
-					current_row, mem_read_address);
+					current_row, address + current_row);
 				//store the shifted sprite
 				sprite_row <= {mem_read_data, 8'h0} >> shift;
 				mem_read_address <= address_left;
@@ -117,6 +118,8 @@ always @(posedge clk) begin
 					//next row
 					current_row <= current_row + 1;
 					mem_read_address <= address + current_row + 1;
+					//move the pointer to another row
+					screen_address <= screen_address + SCREEN_WIDTH_BYTES;
 					state <= STATE_LOAD_SPRITE;
 				end
 			end
