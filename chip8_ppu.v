@@ -18,7 +18,9 @@ module ppu(
 	output reg mem_read_enable,
 	output reg [11:0] mem_write_address,
 	output reg [7:0] mem_write_data,
-	output reg mem_write_enable
+	output reg mem_write_enable,
+	
+	output reg [3:0] state_out
 );
 
 // PPU registers
@@ -60,9 +62,11 @@ always @(*) begin
 	case (state) 
 		STATE_WAIT: 
 		begin
+			if(draw) begin
 			//sprite address
-			mem_read_address = address + current_row;
-			mem_read_enable = 1;
+				mem_read_address = address + current_row;
+				mem_read_enable = 1;
+			end
 		end
 		STATE_LOAD_SPRITE: 
 		begin
@@ -76,6 +80,7 @@ always @(*) begin
 				mem_read_enable = 1;
 			end
 			//write left
+			//create the ouput by xoring the pixels
 			mem_write_data = mem_read_data ^ sprite_row[15:8];
 			mem_write_address = address_left;
 			mem_write_enable = 1;
@@ -83,12 +88,13 @@ always @(*) begin
 		end
 		STATE_LOAD_RIGHT_WRITE_LEFT:
 		begin
-			//write right
-			mem_write_data = mem_read_data ^ sprite_row[7:0];
-			mem_write_address = address_right;
-			mem_write_enable = 1;
+			if(draw_right_half) begin
+				//write right
+				mem_write_data = mem_read_data ^ sprite_row[7:0];
+				mem_write_address = address_right;
+				mem_write_enable = 1;
+			end
 			$display($time, " ppu: right $%x = %x", address_right, mem_write_data); 
-//			mem_read_enable = 1;
 		end
 		STATE_WRITE_RIGHT:
 		begin
@@ -102,8 +108,6 @@ always @(posedge clk) begin
 	if(reset) begin
 		state <= STATE_WAIT;
 	end else begin
-//		mem_write_enable <= 1'b0;
-//		mem_read_enable <= 1'b0;
 		case (state) 
 			STATE_WAIT:
 			begin
@@ -114,47 +118,30 @@ always @(posedge clk) begin
 					draw_right_half <= (x % 8) != 0;
 					collision <= 0;
 					current_row <= 0;
-					//mem_read_address <= address + current_row;
-					//mem_read_enable <= 1'b1;
 					screen_address <= y * SCREEN_WIDTH_BYTES + (x >> 3);
 					state <= STATE_LOAD_SPRITE;
 				end
 			end
 			STATE_LOAD_SPRITE:
 			begin
-				$display($time, " ppu: load sprite row %d at $%x", 
-					current_row, address + current_row);
+				$display($time, " ppu: load sprite row %d at $%x, data: %x", 
+					current_row, address + current_row, mem_read_data);
 				//store the shifted sprite
 				sprite_row <= {mem_read_data, 8'h0} >> shift;
-				//mem_read_address <= address_left;
-				//mem_read_enable <= 1'b1;
 				state <= STATE_LOAD_LEFT;
 			end
 			STATE_LOAD_LEFT:
 			begin
-				$display($time, " ppu: load left byte from $%x", mem_read_address);
+				$display($time, " ppu: load left byte from $%x, data: %x", mem_read_address, mem_read_data);
 				//collision detection by ANDing the data with the sprite and checking if any bits are set
 				collision <= collision | |(mem_read_data & sprite_row[15:8]);
-				//create the ouput by xoring the pixels
-//				mem_write_data <= mem_read_data ^ sprite_row[15:8];
-				//set up output
-//				mem_write_address <= address_left;
-//				mem_write_enable <= 1'b1;
-				//prepare for the right pixel
-//				if(draw_right_half) begin
-//					mem_read_address <= address_right;
-//				end
 				state <= STATE_LOAD_RIGHT_WRITE_LEFT;
 			end
 			STATE_LOAD_RIGHT_WRITE_LEFT:
 			begin
 				if(draw_right_half) begin
-					$display($time, " ppu: load right byte from $%x", mem_read_address);
+					$display($time, " ppu: load right byte from $%x, data: %x", mem_read_address, mem_read_data);
 					collision <= collision | |(mem_read_data & sprite_row[7:0]);
-//					mem_write_data <= mem_read_data ^ sprite_row[7:0];
-//					mem_write_address <= address_right;
-//					mem_write_data <= screen_address;
-//					mem_write_enable <= 1'b1;
 				end
 				state <= STATE_WRITE_RIGHT;
 			end
@@ -167,13 +154,13 @@ always @(posedge clk) begin
 				end else begin
 					//next row
 					current_row <= current_row + 1;
-//					mem_read_address <= address + current_row + 1;
 					//move the pointer to another row
 					screen_address <= screen_address + SCREEN_WIDTH_BYTES;
 					state <= STATE_LOAD_SPRITE;
 				end
 			end
 		endcase
+		state_out <= state;
 	end
 end
 endmodule

@@ -16,10 +16,6 @@ wire [7:0] rom_out;
 reg ppu_draw;
 wire ppu_busy;
 wire ppu_collision;
-wire [11:0] ppu_mem_read_address;
-wire [11:0] ppu_mem_write_address;
-wire [7:0] ppu_mem_read_data;
-wire [7:0] ppu_mem_write_data;
 wire ppu_mem_read_enable;
 wire ppu_mem_write_enable;
 
@@ -28,7 +24,7 @@ reg [7:0] vy;
 reg [11:0] I;
 reg [3:0] n;
   
-  chip8_ram ram(
+chip8_ram ram(
 	.clk(clk),
 	.q(ram_out),
 	.d(ram_in),
@@ -61,8 +57,9 @@ ppu DUT(
 	end
 	
 	initial begin
+		# 10 
 		reset = 1;
-		# 100
+		# 40
 		reset = 0;
 		# 20
 		ppu_draw = 1;
