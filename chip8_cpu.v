@@ -88,7 +88,8 @@ localparam [7:0]
 	state_instr_b = 7'h9,
 	state_save_registers = 7'ha,
 	state_load_registers = 7'hb,
-	state_draw = 7'hc;
+	state_draw = 7'hc,
+	state_reset = 7'hf;
 	
 reg [7:0] state = state_fetch_hi;
 
@@ -195,16 +196,7 @@ end
 //TODO see https://github.com/asinghani/pifive-cpu/blob/main/cpu/rtl/decode/decode.sv
 always @(posedge clk) begin 
 	if(reset) begin
-		PC <= 12'h200;
-		I <= 0;
-		SP <= 0;
-		delay_timer <= 0;
-		sound_timer <= 0;
-		state <= state_fetch_hi;
-		opcode <= 0;
-		address_in <= 0;
-		write_enable <= 1'b0;
-		register_write_enable <= 1'b0;
+		state <= state_reset;
 	end else begin
 	//if(cpu_tick) begin
 		write_enable <= 1'b0; //TODO is there a better way to reset the flags?
@@ -212,6 +204,19 @@ always @(posedge clk) begin
 		//fetch, decode, execute
 		//fetch byte 1
 		case(state)
+				state_reset:
+				begin
+					PC <= 12'h200;
+					I <= 0;
+					SP <= 0;
+					delay_timer <= 0;
+					sound_timer <= 0;					
+					opcode <= 0;
+					address_in <= 0;
+					write_enable <= 1'b0;
+					register_write_enable <= 1'b0;
+					state <= state_fetch_hi;
+				end
 				state_fetch_hi:
 				begin
 					// request high byte of the opcode
@@ -328,6 +333,7 @@ always @(posedge clk) begin
 						begin
 							ppu_draw <= 1'b1;
 							state <= state_draw;
+							//TODO somehow forward 
 						end
 						//TODO 4'hE
 						4'hE:
