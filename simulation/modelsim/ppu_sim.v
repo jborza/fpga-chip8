@@ -59,6 +59,9 @@ ppu DUT(
 	initial begin
 		# 10 
 		reset = 1;
+		ppu_draw = 0;
+		vx = 'h0;
+		vx = 'h0;
 		# 40
 		reset = 0;
 		# 20
@@ -66,7 +69,7 @@ ppu DUT(
 		vx = 'hc;
 		vy = 'h8;
 		n = 'hf;
-		I = 'hA22A;		
+		I = 'h22A;		
 		# 20
 		//reset 
 		ppu_draw = 0;

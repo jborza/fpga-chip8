@@ -20,12 +20,14 @@ module ppu(
 	output reg [7:0] mem_write_data,
 	output reg mem_write_enable,
 	
-	output reg [3:0] state_out
+	output reg [3:0] state_out,
+	output wire [7:0] state_out2,
+	output reg [7:0] mem_actually_read
 );
 
 // PPU registers
 reg [15:0] sprite_row; //shifted to position for left and right byte
-reg [3:0] current_row;
+reg [3:0] current_row = 4'h0;
 reg draw_right_half;
 reg [7:0] screen_byte;
 reg [3:0] shift;
@@ -60,33 +62,34 @@ always @(*) begin
 	mem_write_address = 0;
 	mem_write_data = 0;
 	case (state) 
-		STATE_WAIT: 
+		STATE_LOAD_SPRITE:
 		begin
-			if(draw) begin
-			//sprite address
-				mem_read_address = address + current_row;
-				mem_read_enable = 1;
-			end
+			//sprite address is originally I + row index
+			mem_read_address = address + current_row;
+			mem_read_enable = 1;
+			$display($time, " ppu mem: reading sprite from $%x", mem_read_address);
 		end
-		STATE_LOAD_SPRITE: 
+		STATE_LOAD_LEFT:
 		begin
 			mem_read_address = address_left;
 			mem_read_enable = 1;
+			$display($time, " ppu mem: reading left from $%x", mem_read_address);
 		end
-		STATE_LOAD_LEFT:
+		STATE_LOAD_RIGHT_WRITE_LEFT:
 		begin
 			if(draw_right_half) begin
 				mem_read_address = address_right;
 				mem_read_enable = 1;
+				$display($time, " ppu mem: reading right from $%x", mem_read_address);
 			end
 			//write left
 			//create the ouput by xoring the pixels
 			mem_write_data = mem_read_data ^ sprite_row[15:8];
 			mem_write_address = address_left;
 			mem_write_enable = 1;
-			$display($time, " ppu: left $%x = %x", address_left, mem_write_data);
+			$display($time, " ppu mem: left $%x = %x", address_left, mem_write_data);
 		end
-		STATE_LOAD_RIGHT_WRITE_LEFT:
+		STATE_WRITE_RIGHT:
 		begin
 			if(draw_right_half) begin
 				//write right
@@ -94,12 +97,7 @@ always @(*) begin
 				mem_write_address = address_right;
 				mem_write_enable = 1;
 			end
-			$display($time, " ppu: right $%x = %x", address_right, mem_write_data); 
-		end
-		STATE_WRITE_RIGHT:
-		begin
-			mem_read_address = address + current_row + 1;
-			mem_read_enable = 1;			
+			$display($time, " ppu mem: right $%x = %x", address_right, mem_write_data); 
 		end
 	endcase
 end
@@ -151,6 +149,7 @@ always @(posedge clk) begin
 				if(current_row == sprite_height - 1) begin
 					$display($time, " ppu: last row written, finishing");
 					state <= STATE_WAIT;
+					current_row <= 4'h0;
 				end else begin
 					//next row
 					current_row <= current_row + 1;
@@ -161,6 +160,7 @@ always @(posedge clk) begin
 			end
 		endcase
 		state_out <= state;
+		mem_actually_read <= mem_read_data;
 	end
 end
 endmodule
