@@ -120,13 +120,13 @@ ppu DUT(
 			assert_equal(ram.mem['h152], 'h0f);
 			//4th row - zeroes
 			assert_equal(ram.mem['h159], 'h00);
-			assert_equal(ram.mem['h15A], 'h01);
+			assert_equal(ram.mem['h15A], 'h00);
 			//5th row - 03 c0
 			assert_equal(ram.mem['h161], 'h03);
 			assert_equal(ram.mem['h162], 'hc0);
 			//6th row - 00 00
-			assert_equal(ram.mem['h169], 'h0f);
-			assert_equal(ram.mem['h16A], 'h0f);
+			assert_equal(ram.mem['h169], 'h00);
+			assert_equal(ram.mem['h16A], 'h00);
 
 			$stop;
 	end
