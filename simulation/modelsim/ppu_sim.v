@@ -72,6 +72,23 @@ ppu DUT(
     end
   endtask
 
+ task draw;
+	input [11:0] sprite_addr;
+	input [7:0] draw_x, draw_y;
+	input [3:0] height;
+	begin
+		#20;
+		I = sprite_addr;
+		vx = draw_x;
+		vy = draw_y;
+		n = height;
+		ppu_draw = 1;
+		# 20;
+		ppu_draw = 0;
+	end
+ 
+ endtask
+
 	initial begin
 		//initialize clock input
 		clk = 0;
@@ -86,51 +103,80 @@ ppu DUT(
 		# 40
 		reset = 0;
 		# 20
-		ppu_draw = 1;
-		vx = 'hc;
-		vy = 'h8;
-		n = 'hf;
-		I = 'h22A;		
-		# 20
-		//reset 
-		ppu_draw = 0;
+		
+		// draw the first character
+		draw('h22A, 'hc, 'h8, 15); //I
+
+		
+		#10 wait (!ppu_busy)
+		assert_equal(ppu_collision, 0);
+		assert_equal(ram.mem['h141], 'h0f);
+		assert_equal(ram.mem['h142], 'hf0);
+		//2nd row - zeroes
+		assert_equal(ram.mem['h149], 'h00);
+		assert_equal(ram.mem['h14A], 'h00);
+		//3rd row - 0f f0
+		assert_equal(ram.mem['h151], 'h0f);
+		assert_equal(ram.mem['h152], 'hf0);
+		//4th row - zeroes
+		assert_equal(ram.mem['h159], 'h00);
+		assert_equal(ram.mem['h15A], 'h00);
+		//5th row - 03 c0
+		assert_equal(ram.mem['h161], 'h03);
+		assert_equal(ram.mem['h162], 'hc0);
+		//6th row - 00 00
+		assert_equal(ram.mem['h169], 'h00);
+		assert_equal(ram.mem['h16A], 'h00);
+		
+		// draw the second character
+		draw('h239, 'h15, 'h8, 15); // B1
+		
+		#10 wait (!ppu_busy)
+		
+		assert_equal(ppu_collision, 0);
+		assert_equal(ram.mem['h142], 'b11110111);
+		assert_equal(ram.mem['h143], 'b11111000);
+		
+		//
+		draw('h248, 'h1D, 'h8, 15); //B2
+		
+		#10 wait (!ppu_busy)   
+		
+		//assert_equal(ppu_collision, 0);
+		//assert_equal(ram.mem['h142], 'b11110111);
+		//assert_equal(ram.mem['h143], 'b11111000);
+		
+		draw('h257, 'h21, 'h8, 15);  //M1
+		
+		#10 wait (!ppu_busy)
+		
+//		assert_equal(ppu_collision, 0);
+//		assert_equal(ram.mem['h142], 'b11110111);
+//		assert_equal(ram.mem['h143], 'b11111000);
+		
+		draw('h266, 'h29, 'h8, 15);  //M2
+		
+		#10 wait (!ppu_busy)
+		
+//		assert_equal(ppu_collision, 0);
+//		assert_equal(ram.mem['h142], 'b11110111);
+//		assert_equal(ram.mem['h143], 'b11111000);
+		
+		draw('h275, 'h31, 'h8, 15);  //M3
+		
+		#10 wait (!ppu_busy);
+		
+//		assert_equal(ppu_collision, 0);
+//		assert_equal(ram.mem['h142], 'b11110111);
+//		assert_equal(ram.mem['h143], 'b11111000);
 		
 	end
 
    always
 	#10 clk=!clk;
 	
-	//stop the simulation after the PPU stops working
-  	initial begin
-		//give PPU some time to process
-		#500 ;
-		while (ppu_busy == 1 || ppu_draw == 1) 
-		begin
-			#10 ;
-		end
-			//validate whether the logo is at the correct location!
-			assert_equal(ppu_collision, 0);
-			assert_equal(ram.mem['h141], 'h0f);
-			assert_equal(ram.mem['h142], 'hf0);
-			//2nd row - zeroes
-			assert_equal(ram.mem['h149], 'h00);
-			assert_equal(ram.mem['h14A], 'h00);
-			//3rd row - 0f f0
-			assert_equal(ram.mem['h151], 'h0f);
-			assert_equal(ram.mem['h152], 'h0f);
-			//4th row - zeroes
-			assert_equal(ram.mem['h159], 'h00);
-			assert_equal(ram.mem['h15A], 'h00);
-			//5th row - 03 c0
-			assert_equal(ram.mem['h161], 'h03);
-			assert_equal(ram.mem['h162], 'hc0);
-			//6th row - 00 00
-			assert_equal(ram.mem['h169], 'h00);
-			assert_equal(ram.mem['h16A], 'h00);
 
-			$stop;
-	end
 
   initial
-	#2000 $stop;
+	#10000 $stop;
 endmodule
