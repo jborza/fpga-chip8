@@ -1,0 +1,10 @@
+// digraph{
+//     load_sprite -> load_mem_left -> store_mem_left -> load_mem_right -> store_mem_right
+//     store_mem_right -> load_sprite
+// }
+
+digraph {
+    idle -> fetch_sprite -> fetch_left -> fetch_right -> store_left -> store_right -> fetch_sprite
+
+    state_idle -> state_fetch_sprite->state_fetch_left -> state_fetch_right_store_left -> state_store_right -> state_fetch_sprite
+}
