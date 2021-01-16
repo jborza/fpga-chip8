@@ -8,7 +8,7 @@ module ppu(
 	input wire [3:0] sprite_height,
 	input wire [5:0] x,
 	input wire [4:0] y,
-	
+
 	output wire busy,
 	output reg collision,
 	
@@ -60,11 +60,11 @@ always @(posedge clk) begin
 		state <= STATE_WAIT;
 	end else begin
 		
-		mem_read_enable = 0;
-		mem_write_enable = 0;
-		mem_read_address = 0;
-		mem_write_address = 0;
-		mem_write_data = 0;
+		mem_read_enable <= 0;
+		mem_write_enable <= 0;
+		mem_read_address <= 0;
+		mem_write_address <= 0;
+		mem_write_data <= 0;
 		case (state) 
 			STATE_WAIT:
 			begin
@@ -107,7 +107,6 @@ always @(posedge clk) begin
 				sprite_row <= {mem_read_data, 8'h0} >> shift;
 				state <= STATE_WRITE_LEFT;
 				//write left
-				//create the ouput by xoring the pixels
 				
 			end
 			STATE_WRITE_LEFT:
@@ -134,7 +133,7 @@ always @(posedge clk) begin
 				if(current_row == sprite_height - 1) begin
 					$display($time, " ppu: last row written, finishing");
 					state <= STATE_WAIT;
-					current_row = 4'h0;
+					current_row <= 4'h0;
 				end else begin
 					state <= STATE_FETCH_SPRITE;
 					//move the pointer to another row
